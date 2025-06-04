@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>GridHack - Central de Operações</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #141b22;
+            --panel: #19232e;
+            --accent: #32e67b;
+            --error: #e53935;
+            --warn: #f6c343;
+            --card-shadow: 0 4px 24px 0 #0005;
+            --text-main: #e0e8ef;
+            --text-subtle: #7aa2cf;
+            --button-iso: #ff9900;
+            --button-restore: #0dcaf0;
+            --node-falha: #e53935;
+            --node-isolado: #39b3f6;
+            --node-ok: #3be68f;
+            --transition: all 0.25s cubic-bezier(.4,0,.2,1);
+        }
+        body {
+            margin: 0; background: var(--bg); color: var(--text-main);
+            font-family: 'Roboto', Arial, sans-serif; min-height: 100vh;
+        }
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.3rem; font-weight: 700; letter-spacing: 2px;
+            margin-top: 2rem; margin-bottom: 1.3rem; text-align: center;
+            color: var(--accent); text-shadow: 0 1px 0 #0b0, 0 2px 10px #32e67b44;
+        }
+        .panel {
+            background: var(--panel);
+            margin: 0 auto 1.5rem auto;
+            max-width: 660px;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            padding: 2.2rem 2.5rem 1.5rem 2.5rem;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .msg, .alerta {
+            width: 100%; max-width: 570px;
+            border-radius: 8px;
+            margin: 0.8rem auto 1.2rem auto;
+            padding: 1rem 1.2rem;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+        .msg {
+            background: #232f3d;
+            color: var(--text-main);
+            border-left: 5px solid var(--accent);
+        }
+        .alerta {
+            background: var(--error);
+            color: #fff;
+            border-left: 5px solid #fff;
+            font-weight: 700;
+            box-shadow: 0 4px 20px #e5393550;
+        }
+        .buttons-top {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 1.04rem;
+            padding: 0.7rem 2.2rem;
+            border: none; border-radius: 8px;
+            cursor: pointer;
+            background: var(--panel);
+            color: var(--accent);
+            box-shadow: 0 2px 12px #1a4d3542;
+            transition: var(--transition);
+            outline: none;
+            display: flex; align-items: center; gap: 0.55rem;
+        }
+        .btn:hover { background: #10171d; color: #fff;}
+        .btn-weather { color: #0dcaf0;}
+        .btn-auto { color: #f6c343;}
+        .node-list {
+            display: flex; flex-wrap: wrap; gap: 2rem;
+            justify-content: center; width: 100%;
+        }
+        .node-card {
+            background: linear-gradient(155deg, #212b38 40%, #273345 100%);
+            border-radius: 16px;
+            min-width: 180px; min-height: 172px;
+            padding: 1.4rem 1.2rem 1.2rem 1.2rem;
+            box-shadow: 0 6px 24px #162b3f55;
+            display: flex; flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .node-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600; letter-spacing: 1.2px;
+            font-size: 1.09rem;
+            margin-bottom: 0.6rem;
+        }
+        .node-status {
+            font-size: 1.1rem; font-weight: 700;
+            margin-bottom: 1rem;
+            min-height: 32px;
+        }
+        .node-status.ok { color: var(--node-ok);}
+        .node-status.falha { color: var(--node-falha);}
+        .node-status.isolando { color: var(--node-isolado);}
+        .node-status.isolado { color: var(--node-isolado);}
+        .actions-btns {
+            display: flex; flex-direction: row; gap: 0.7rem;
+        }
+        .btn-iso {
+            background: var(--button-iso); color: #222;
+            font-weight: 700; font-family: 'JetBrains Mono', monospace;
+        }
+        .btn-iso:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-iso:not(:disabled):hover { filter: brightness(1.11);}
+        .btn-restore {
+            background: var(--button-restore); color: #14202b;
+            font-weight: 700; font-family: 'JetBrains Mono', monospace;
+        }
+        .btn-restore:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-restore:not(:disabled):hover { filter: brightness(1.1);}
+        @media (max-width: 750px) {
+            .panel { padding: 1.2rem 0.3rem;}
+            .node-list { gap: 1.1rem;}
+            .node-card { min-width: 120px; padding: 1.1rem 0.5rem;}
+        }
+    </style>
+</head>
+<body>
+    <h1>GridHack - Central de Operações</h1>
+    <div class="panel">
+        <div id="instrucoes" class="msg">
+            <span style="font-weight:bold;color:var(--accent)">Bem-vindo à central!</span><br>
+            Dois nós estão com falha.<br>
+            <b>Sua missão:</b> Isole os nós em falha para restaurar a rede elétrica.<br>
+            Após isolar, clique em “Restaurar” para normalizar a rede.<br>
+            <span style="color:var(--warn)">Cuidado: desastres naturais podem acontecer!</span>
+        </div>
+        <div id="alerta-desastre" class="alerta" style="display:none;">
+            <b>PANE!</b> Desastre natural detectado.<br>
+            Reestabeleça a conexão da rede o mais rápido possível!
+        </div>
+        <div class="buttons-top">
+            <button class="btn btn-weather" onclick="getWeather()">
+                Consultar Clima Atual
+            </button>
+            <button class="btn btn-auto" onclick="triggerDisaster()">
+                Simular Desastre
+            </button>
+        </div>
+        <div id="msg" class="msg" style="display:none; background: #17212c; color:#90e4b3;"></div>
+        <h2 style="margin:1.4rem 0 1rem 0;font-size:1.1rem;color:var(--text-subtle);font-weight:700;letter-spacing:1px;text-align:center;">
+            Nós da Rede Elétrica
+        </h2>
+        <div class="node-list" id="node-list"></div>
+    </div>
+    <script>
+        const API_BASE = "http://localhost:8000/api";
+        let isolatingNodes = {};
+
+        async function fetchNodes() {
+            const res = await fetch(`${API_BASE}/network/nodes`);
+            const nodes = await res.json();
+            renderNodes(nodes);
+            checkSuccess(nodes);
+        }
+
+        function renderNodes(nodes) {
+            const list = document.getElementById('node-list');
+            list.innerHTML = "";
+            nodes.forEach(node => {
+                let statusLabel = "";
+                let statusClass = "";
+                let disableIsolate = "";
+                let disableRestore = "";
+
+                if (isolatingNodes[node.id]) {
+                    statusLabel = "Isolando o nó...";
+                    statusClass = "node-status isolando";
+                    disableIsolate = "disabled";
+                    disableRestore = "disabled";
+                } else if (node.status === "OK") {
+                    statusLabel = "OK";
+                    statusClass = "node-status ok";
+                    disableIsolate = "disabled";
+                    disableRestore = "disabled";
+                } else if (node.status === "Falha") {
+                    statusLabel = "Falha";
+                    statusClass = "node-status falha";
+                    disableIsolate = "";
+                    disableRestore = "disabled";
+                } else if (node.status === "Isolado") {
+                    statusLabel = "Nó pronto para ser restaurado";
+                    statusClass = "node-status isolado";
+                    disableIsolate = "disabled";
+                    disableRestore = "";
+                }
+
+                let card = document.createElement('div');
+                card.className = "node-card";
+                card.innerHTML = `
+                    <div class="node-title">${node.name}</div>
+                    <div>
+                        <span class="${statusClass}">${statusLabel}</span>
+                    </div>
+                    <div class="actions-btns">
+                        <button class="btn-iso" onclick="isolateNode(${node.id})" ${disableIsolate}>
+                            Isolar
+                        </button>
+                        <button class="btn-restore" onclick="restoreNode(${node.id})" ${disableRestore}>
+                            Restaurar
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        async function isolateNode(id) {
+            isolatingNodes[id] = true;
+            renderNodes(await getNodesDirect());
+            setTimeout(async () => {
+                delete isolatingNodes[id];
+                const res = await fetch(`${API_BASE}/network/nodes/${id}/isolate`, {method: "POST"});
+                const data = await res.json();
+                showMsg(data.message || "Nó isolado. Pronto para ser restaurado.");
+                fetchNodes();
+            }, 1000);
+        }
+
+        async function restoreNode(id) {
+            const res = await fetch(`${API_BASE}/network/nodes/${id}/restore`, {method: "POST"});
+            const data = await res.json();
+            showMsg(data.message || "Nó restaurado. O ponto voltou a funcionar normalmente!");
+            fetchNodes();
+        }
+
+        async function getWeather() {
+            showMsg("Consultando clima atual...");
+            const res = await fetch(`${API_BASE}/weather/current`);
+            const data = await res.json();
+            let weather = data.current_weather;
+            showMsg(`<b>Temperatura:</b> ${weather.temperature}°C<br>
+                     <b>Clima:</b> ${weather.weathercode} <small>(consulte código na doc da Open-Meteo)</small>`);
+        }
+
+        async function triggerDisaster() {
+            showMsg("Simulando desastre natural...");
+            const res = await fetch(`${API_BASE}/network/disaster`, { method: "POST" });
+            const data = await res.json();
+            showMsg(data.mensagem);
+            document.getElementById('alerta-desastre').style.display = 'block';
+            fetchNodes();
+        }
+
+        function showMsg(msg) {
+            const el = document.getElementById('msg');
+            el.innerHTML = msg;
+            el.style.display = 'block';
+            setTimeout(()=>{ el.style.display = 'none'; }, 7000);
+        }
+
+        function checkSuccess(nodes) {
+            if (nodes.every(node => node.status === "OK")) {
+                showMsg("Parabéns! Todos os nós estão estáveis e a rede está funcionando normalmente! 🎉");
+                document.getElementById('instrucoes').innerHTML = "A rede elétrica está estável.<br>Continue monitorando possíveis falhas!";
+                document.getElementById('alerta-desastre').style.display = 'none';
+            }
+        }
+
+        async function getNodesDirect() {
+            const res = await fetch(`${API_BASE}/network/nodes`);
+            return await res.json();
+        }
+
+        fetchNodes();
+    </script>
+</body>
+</html>
